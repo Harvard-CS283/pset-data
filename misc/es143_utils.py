@@ -272,6 +272,8 @@ def add_plotly_plane(plane,figobj):
         This function only works for planes in a particular volume. It
         will need to be modified to work for other volumes.
     """
+    import plotly.graph_objects as go
+    
     # create regular grid of X,Y,Z values that span the volume that is relevant to
     # these particular planes
     #   (numpy.mgrid trick: j (complex) in step size forces inclusion of stop value)
