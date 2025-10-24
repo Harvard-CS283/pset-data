@@ -253,6 +253,47 @@ def add_plotly_camera(h, w, camera, raysize, figobj):
 
     return figobj
 
+def add_plotly_plane(plane,figobj):
+    """
+    Add 3D plane to pyplot figure.
+
+    Parameters:
+    ----------
+        plane (tuple): Tuple containing plane parameters (a, b, c, d)
+        figobj : plotly.graph_objects.Figure
+                 Plotly Figure object to which the camera will be added.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+        The same Figure object with the camera traces added.
+
+    Note:
+        This function only works for planes in a particular volume. It
+        will need to be modified to work for other volumes.
+    """
+    # create regular grid of X,Y,Z values that span the volume that is relevant to
+    # these particular planes
+    #   (numpy.mgrid trick: j (complex) in step size forces inclusion of stop value)
+    X, Y, Z = np.mgrid[-5:5:40j, -9:5:40j, 10:21:40j]
+
+    # evaluate the linear functions on this volumetric grid that is zero at the plane
+    implicitplane = plane[0]*X + plane[1]*Y + plane[2]*Z + plane[3]
+
+    # display using plotly's isosurface trace
+    figobj.add_trace(go.Isosurface(
+          x=X.flatten(),
+          y=Y.flatten(),
+          z=Z.flatten(),
+          value=implicitplane.flatten(),
+          isomin=0,
+          isomax=0,
+          opacity=0.3,
+          colorscale='blues',
+          showscale=False, # remove colorbar
+          ))
+
+    return figobj
 
 # -------------------------------------------------------------------------
 # AprilTag detection utilities
