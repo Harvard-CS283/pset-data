@@ -5,6 +5,7 @@ Utility functions for ES143 camera calibration and AprilTag-based board detectio
 
 Includes:
 - Camera visualization in 3D using Plotly
+- Drawing lines and conics in 2D with Matplotlib
 - AprilTag detector setup and tag-to-board matching
 
 Typical usage:
