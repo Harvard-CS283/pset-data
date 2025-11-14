@@ -24,6 +24,9 @@ __all__ = [
     "make_apriltag_detector",
     "detect_aprilboard",
     "AT_DETECTOR",
+    "in2hom",
+    "hom2in",
+    "normalizing_transform"
 ]
 
 # -------------------------------------------------------------------------
