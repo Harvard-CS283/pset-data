@@ -18,6 +18,7 @@ import numpy as np
 __all__ = [
     "viz_board_calibration",
     "add_plotly_camera",
+    "add_mplot_line",
     "make_apriltag_detector",
     "detect_aprilboard",
     "AT_DETECTOR",
@@ -296,6 +297,184 @@ def add_plotly_plane(plane,figobj):
           ))
 
     return figobj
+
+# -------------------------------------------------------------------------
+# matplotlib utilities
+# -------------------------------------------------------------------------
+
+def add_mplot_line(line, ax=None, imsize=(100, 100), color='r', lw=2, n_samples=400, **kwargs):
+    """
+    Add a 2D line to a Matplotlib axis using the contour trick.
+
+    Parameters
+    ----------
+    line : array_like, shape (3,)
+        Line parameters (a, b, c) representing the algebraic form:
+        a*x + b*y + c = 0.
+    ax : matplotlib.axes.Axes, optional
+        Existing Matplotlib axes to draw on. If None, a new figure and axes
+        are created automatically.
+    imsize : int or tuple of (height, width), optional
+        Size of the plotting region. 
+        - If an int, assumes a square plot of that width/height.
+        - If a tuple, should be (height, width), e.g. im.shape[:2].
+    color : str or tuple, optional
+        Line color. Default is 'r' (red).
+    lw : float, optional
+        Line width for contour. Default is 2.
+    n_samples : int, optional
+        Number of samples per axis used to compute the contour grid. Higher
+        means smoother lines. Default is 400.
+    **kwargs :
+        Additional keyword arguments passed to `ax.contour()` (e.g., linestyle).
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The Matplotlib figure object.
+    ax : matplotlib.axes.Axes
+        The Matplotlib axes object.
+    cs : matplotlib.contour.QuadContourSet
+        The contour set for the plotted line (useful to customize style later).
+
+    Notes
+    -----
+    This uses the zero-level contour of the implicit function h(x,y) = a*x + b*y + c.
+    It’s robust, simple, and avoids handling special cases for vertical lines.
+
+    Example
+    -------
+    >>> fig, ax, cs = add_mplot_line([1, -1, -10], imsize=(480, 640), color='g', lw=1.5)
+    >>> ax.set_title('Example line on a 640x480 image')
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    # --- Parse imsize ---
+    if np.isscalar(imsize):
+        height = width = int(imsize)
+    else:
+        height, width = imsize[:2]
+
+    # --- Validate line ---
+    line = np.asarray(line).ravel()
+    if line.size != 3:
+        raise ValueError("line must be a 3-element vector [a, b, c].")
+
+    # --- Create or configure axes ---
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(width/100, height/100))
+        ax.set_aspect(1)
+        ax.invert_yaxis()
+        ax.xaxis.tick_top()
+    else:
+        fig = ax.figure
+
+    # --- Generate a grid ---
+    x, y = np.meshgrid(
+        np.linspace(0, width, n_samples),
+        np.linspace(0, height, n_samples)
+    )
+    h = line[0]*x + line[1]*y + line[2]
+
+    # --- Draw the zero contour (the line) ---
+    cs = ax.contour(x, y, h, levels=[0], colors=[color], linewidths=lw, **kwargs)
+
+    return fig, ax, cs
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def add_mplot_conic(conic, ax=None, imsize=(100, 100), color='b', lw=2, n_samples=400, **kwargs):
+    """
+    Add a 2D conic section (ellipse, parabola, hyperbola, etc.) to a Matplotlib axis
+    using the contour trick.
+
+    Parameters
+    ----------
+    conic : array_like, shape (6,)
+        Conic parameters (a, b, c, d, e, f) representing the algebraic form:
+            a*x^2 + b*x*y + c*y^2 + d*x + e*y + f = 0.
+    ax : matplotlib.axes.Axes, optional
+        Existing Matplotlib axes to draw on. If None, a new figure and axes
+        are created automatically.
+    imsize : int or tuple of (height, width), optional
+        Size of the plotting region. 
+        - If an int, assumes a square plot of that width/height.
+        - If a tuple, should be (height, width), e.g. im.shape[:2].
+    color : str or tuple, optional
+        Conic color. Default is 'b' (blue).
+    lw : float, optional
+        Line width for contour. Default is 2.
+    n_samples : int, optional
+        Number of samples per axis used to compute the contour grid. Higher
+        means smoother conic curves. Default is 400.
+    **kwargs :
+        Additional keyword arguments passed to `ax.contour()` (e.g., linestyle).
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The Matplotlib figure object.
+    ax : matplotlib.axes.Axes
+        The Matplotlib axes object.
+    cs : matplotlib.contour.QuadContourSet
+        The contour set for the plotted conic (useful to customize style later).
+
+    Notes
+    -----
+    This uses the zero-level contour of the implicit function:
+        h(x,y) = a*x^2 + b*x*y + c*y^2 + d*x + e*y + f.
+    It's robust, general, and works for ellipses, circles, parabolas, and hyperbolas.
+
+    Example
+    -------
+    >>> fig, ax, cs = add_mplot_conic([1, 0, 1, 0, 0, -40000],
+    ...                               imsize=(480, 640), color='m', lw=1.5)
+    >>> ax.set_title('Example conic: x² + y² - 40000 = 0 (circle of radius 200)')
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    # --- Parse imsize ---
+    if np.isscalar(imsize):
+        height = width = int(imsize)
+    else:
+        height, width = imsize[:2]
+
+    # --- Validate conic coefficients ---
+    conic = np.asarray(conic).ravel()
+    if conic.size != 6:
+        raise ValueError("conic must be a 6-element vector [a, b, c, d, e, f].")
+
+    # --- Create or configure axes ---
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(width/100, height/100))
+        ax.set_aspect(1)
+        ax.invert_yaxis()
+        ax.xaxis.tick_top()
+    else:
+        fig = ax.figure
+
+    # --- Generate a grid ---
+    x, y = np.meshgrid(
+        np.linspace(0, width, n_samples),
+        np.linspace(0, height, n_samples)
+    )
+
+    # --- Compute implicit function for the conic ---
+    h = (conic[0]*x**2 +
+         conic[1]*x*y +
+         conic[2]*y**2 +
+         conic[3]*x +
+         conic[4]*y +
+         conic[5])
+
+    # --- Draw the zero contour (the conic) ---
+    cs = ax.contour(x, y, h, levels=[0], colors=[color], linewidths=lw, **kwargs)
+
+    return fig, ax, cs
+
 
 # -------------------------------------------------------------------------
 # AprilTag detection utilities
