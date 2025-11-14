@@ -19,6 +19,7 @@ __all__ = [
     "viz_board_calibration",
     "add_plotly_camera",
     "add_mplot_line",
+    "add_mplot_conic",
     "make_apriltag_detector",
     "detect_aprilboard",
     "AT_DETECTOR",
