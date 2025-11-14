@@ -477,6 +477,66 @@ def add_mplot_conic(conic, ax=None, imsize=(100, 100), color='b', lw=2, n_sample
 
     return fig, ax, cs
 
+# -------------------------------------------------------------------------
+# Geometry Utilities
+# -------------------------------------------------------------------------
+
+def in2hom(X):
+    """
+    Convert from inhomogeneous to homogeneous coordinates
+
+    Args:
+      X  - NxD numpy array, tyically with D=2 (rows (x,y)) or D=3 (rows (x,y,z))
+
+    Returns:
+      Xh - Nx(D+1) numpy array with an appended column of ones
+    """
+
+    return np.concatenate([X, np.ones((X.shape[0], 1), dtype=np.float32)], axis=1)
+
+# Convert from homogeneous to inhomogeneous coordinates
+def hom2in(Xh):
+    """
+    Convert from homogeneous to inhomogeneous coordinates
+
+    Args:
+      Xh  - Nx(D+1) numpy array, tyically with D=2 (rows (x,y,w)) or D=3 (rows (x,y,z,w))
+
+    Returns:
+      X - NxD numpy array with the first D columns divided by column (D+1)
+    """
+
+    return Xh[:, :2] / Xh[:, 2:]
+
+def normalizing_transform(X):
+    """
+    Compute a (Dx1)x(Dx1) normalizing transformation from N points in D dimensions
+
+    Args:
+      X - NxD numpy array, tyically with D=2 (rows (x,y)) or D=3 (rows (x,y,z))
+
+    Returns:
+      T - a (D+1)x(D+1) matrix that normalizes the points to be centered at their
+          centroid, with average distance equal to sqrt(D)
+    """
+
+    # dimension of datapoints
+    D = X.shape[1]
+
+    # Compute centroid
+    centroid = X.mean(axis=0, keepdims=True)
+
+    # Compute the denominator of scale factor s
+    denom = np.mean(np.sqrt(np.sum((X - centroid) ** 2, axis=1)))
+
+    # Compute s, tx, ty
+    s = np.sqrt(D) / denom
+    t = -s * centroid[0, :]
+    t = np.concatenate((t,np.array([1])))
+
+    # return matrix T
+    return np.concatenate((s*np.eye(D+1,D+1)[:,0:D], np.expand_dims(t,1)),axis=1)
+
 
 # -------------------------------------------------------------------------
 # AprilTag detection utilities
